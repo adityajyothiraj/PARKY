@@ -1,0 +1,117 @@
+import cv2
+import easyocr
+import numpy as np
+import firebase_admin
+from firebase_admin import credentials, db
+import time  # Import time module
+import re  # Import re for regular expression
+
+# Step 1: Initialize Firebase Admin SDK
+cred = credentials.Certificate('/home/aditya-jyothiraj/Downloads/parking-field-firebase-adminsdk-xmk7r-dcfc952306.json')
+firebase_admin.initialize_app(cred, {'databaseURL': 'https://parking-field-default-rtdb.firebaseio.com/'})
+
+# Initialize the EasyOCR reader for English language
+reader = easyocr.Reader(['en'])  # 'en' stands for English
+
+# Initialize the webcam (use 0 for the default webcam)
+cap = cv2.VideoCapture(0)
+
+# Check if the webcam opened correctly
+if not cap.isOpened():
+    print("Error: Unable to access the camera.")
+    exit()
+
+# Zoom and filter settings
+zoom_factor = 1.5  # Increase this value for more zoom
+filter_type = 'sharpen'  # Options: 'blur', 'sharpen', 'edge_enhance'
+
+# Apply filter function
+def apply_filter(frame, filter_type):
+    if filter_type == 'blur':
+        return cv2.GaussianBlur(frame, (5, 5), 0)
+    elif filter_type == 'sharpen':
+        kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
+        return cv2.filter2D(frame, -1, kernel)
+    elif filter_type == 'edge_enhance':
+        return cv2.Laplacian(frame, cv2.CV_64F)
+    return frame
+
+# Function to capture one frame, extract text, clean the text and send to Firebase if changed
+def capture_and_send_text(last_sent_value):
+    # Capture a single frame
+    ret, frame = cap.read()
+
+    if not ret:
+        print("Error: Failed to capture image.")
+        return last_sent_value
+
+    # Apply filter for better quality
+    frame = apply_filter(frame, filter_type)
+
+    # Use EasyOCR to extract text from the frame
+    results = reader.readtext(frame)
+
+    # Store the extracted text in a variable
+    extracted_text = ""
+    for result in results:
+        extracted_text = result[1]  # Get the detected text
+
+    # Print the extracted text in the terminal
+    print("Extracted Text:", extracted_text.strip() if extracted_text else "No text detected.")
+
+    # Clean the extracted text (remove non-alphanumeric characters)
+    cleaned_text = re.sub(r'[^A-Z0-9]', '', extracted_text)  # Only keep letters and numbers
+    
+    # Print cleaned text for confirmation
+    print("Cleaned Text:", cleaned_text)
+
+    # Check if the cleaned text is different from the last sent value
+    if cleaned_text != last_sent_value and cleaned_text != "":
+        # Step 3: Send the cleaned text as the value of the main "OPENCV" tag in Firebase
+        ref = db.reference('OPENCV_EXIT')  # 'OPENCV' is the path in the database
+        ref.set(cleaned_text.strip())  # Set the cleaned text as the value of "OPENCV"
+        
+        # Return the newly sent value for the next comparison
+        return cleaned_text.strip()
+
+    # Return the last sent value if no update
+    return last_sent_value
+
+# Set the time interval for automatic capture (every 20 seconds)
+capture_interval = 6  # seconds
+last_capture_time = time.time()  # Initial time
+
+# Initialize the last sent value (empty initially)
+last_sent_value = ""
+
+# Main loop for automatic frame capture
+while True:
+    # Get the current time
+    current_time = time.time()
+
+    # Check if 20 seconds have passed since the last capture
+    if current_time - last_capture_time >= capture_interval:
+        # Capture and send text (extract and send once per frame)
+        last_sent_value = capture_and_send_text(last_sent_value)
+
+        # Optionally print a confirmation message
+        if last_sent_value:
+            print(f"Captured text sent to Firebase: {last_sent_value}")
+        else:
+            print("No text detected to send.")
+        
+        # Update the last capture time
+        last_capture_time = current_time
+
+    # Display the live webcam feed
+    ret, frame = cap.read()
+    if ret:
+        cv2.imshow('Live Camera Feed', frame)
+    
+    # Break the loop if 'q' is pressed
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+# Release the camera and close the window
+cap.release()
+cv2.destroyAllWindows()
