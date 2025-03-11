@@ -1,4 +1,7 @@
 # PARKY
+
+![project_model1](https://github.com/user-attachments/assets/91d5ef18-e39c-4dec-bb06-7b576a64bf72)
+
 PARKY is an innovative parking management system that allows users to book parking slots through a dedicated mobile app. The system ensures seamless entry and exit by using OCR (Optical Character Recognition) and OpenCV to scan vehicle registration numbers.
 Booking: Users enter their vehicle’s registration number and name via the mobile app, which is then saved to a Firebase database.
 Entry & Exit Gates: At the gates, cameras scan the vehicle’s registration number, compare it with the database, and automatically open the gate if the numbers match.
