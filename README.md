@@ -34,7 +34,11 @@ The primary aim of the PARKY project is to develop an automated and efficient pa
 1. Open Visual Studio Code.
 2. Open PlatformIO and create a new project.
 3. Interface the sensors and servo to the board.
-4. 
+4. Upload the code.
+
+# LIBRARY USED
+https://github.com/mobizt/Firebase-ESP-Client.git
+https://github.com/madhephaestus/ESP32Servo.git
 
 # CODE
 ```
