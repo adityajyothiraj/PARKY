@@ -18,8 +18,8 @@ The primary aim of the PARKY project is to develop an automated and efficient pa
 7. 12V DC Power Supply
 
 ## CIRCUIT DIAGRAM
-![Uploading Parky_Circuit.jpg…]
 
+![Parky_Circuit](https://github.com/user-attachments/assets/3473e66a-a44b-4f29-90d4-fd102198b0dc)
 
 .. PIN servoPin ---> GPIO 32  
 .. PIN servoPin2 ---> GPIO 33  
